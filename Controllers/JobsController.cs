@@ -91,5 +91,70 @@ namespace CareerFlowAPI.Controllers
             }
         }
 
+        // ============================================================
+        // Method: Apply
+        // Description:
+        // Allows a user to apply for a job.
+        // Includes validation and secure database insertion.
+        //
+        // Input:
+        // userId (int) – ID of user
+        // jobId (int) – ID of job
+        //
+        // Returns:
+        // Success or error message
+        // ============================================================
+        [HttpPost("apply")]
+        public IActionResult Apply(int userId, int jobId)
+        {
+            // Validation: Check valid IDs
+            if (userId <= 0 || jobId <= 0)
+            {
+                return BadRequest("Invalid user ID or job ID.");
+            }
+
+            try
+            {
+                using (var conn = _db.GetConnection())
+                {
+                    conn.Open();
+
+                    // Check if application already exists
+                    string checkQuery = "SELECT COUNT(*) FROM Applications WHERE UserID = @userId AND JobID = @jobId";
+                    SqlCommand checkCmd = new SqlCommand(checkQuery, conn);
+                    checkCmd.Parameters.AddWithValue("@userId", userId);
+                    checkCmd.Parameters.AddWithValue("@jobId", jobId);
+
+                    int exists = (int)checkCmd.ExecuteScalar();
+
+                    if (exists > 0)
+                    {
+                        return BadRequest("You have already applied for this job.");
+                    }
+
+                    // Insert application
+                    string query = "INSERT INTO Applications (UserID, JobID, Status) VALUES (@userId, @jobId, 'Pending')";
+
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@userId", userId);
+                    cmd.Parameters.AddWithValue("@jobId", jobId);
+
+                    int rows = cmd.ExecuteNonQuery();
+
+                    if (rows > 0)
+                    {
+                        return Ok("Application submitted successfully.");
+                    }
+                    else
+                    {
+                        return BadRequest("Application failed.");
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Error occurred while applying for job.");
+            }
+        }
     }
 }
