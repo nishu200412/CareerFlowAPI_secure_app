@@ -1,7 +1,7 @@
 // ============================================================
 // Class: DatabaseHelper
-// Course: Secure Client-Server Application
-// Student: Manisha Bhatia
+// Course: Application security
+// Students: Manisha Bhatia, Kridhay Makwana, tanisha tanisha 
 //
 // Description:
 // This class is responsible for managing database connections.
