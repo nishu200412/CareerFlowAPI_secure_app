@@ -1,7 +1,7 @@
 // ============================================================
 // File: Program.cs
-// Course: Secure Client-Server Application
-// Student: Manisha Bhatia
+// Course: Application security
+// Student: Manisha Bhatia, Tanisha, Kridhay Makwana
 //
 // Description:
 // This is the main entry point of the CareerFlowAPI application.
@@ -17,6 +17,7 @@
 // - Dependency Injection setup
 // - Swagger API documentation support
 // - HTTPS redirection
+// - CORS enabled for UI communication
 // - Controller-based routing
 // ============================================================
 
@@ -38,6 +39,17 @@ namespace CareerFlowAPI
             // Register DatabaseHelper for database access
             builder.Services.AddScoped<DatabaseHelper>();
 
+            // ============================================================
+            // Add CORS policy (allows UI to call API)
+            // ============================================================
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll",
+                    policy => policy.AllowAnyOrigin()
+                                    .AllowAnyMethod()
+                                    .AllowAnyHeader());
+            });
+
             var app = builder.Build();
 
             // ============================================================
@@ -50,6 +62,11 @@ namespace CareerFlowAPI
             }
 
             app.UseHttpsRedirection();
+
+            // ============================================================
+            // Enable CORS
+            // ============================================================
+            app.UseCors("AllowAll");
 
             app.UseAuthorization();
 

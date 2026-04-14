@@ -107,54 +107,54 @@ namespace CareerFlowAPI.Controllers
         [HttpPost("apply")]
         public IActionResult Apply(int userId, int jobId)
         {
-            // Validation: Check valid IDs
-            if (userId <= 0 || jobId <= 0)
+            using (var conn = _db.GetConnection())
             {
-                return BadRequest("Invalid user ID or job ID.");
-            }
+                conn.Open();
 
-            try
-            {
-                using (var conn = _db.GetConnection())
+                // ============================
+                // Check if User exists
+                // ============================
+                string checkUser = "SELECT COUNT(*) FROM Users WHERE UserID = @userId";
+                SqlCommand userCmd = new SqlCommand(checkUser, conn);
+                userCmd.Parameters.AddWithValue("@userId", userId);
+
+                if ((int)userCmd.ExecuteScalar() == 0)
                 {
-                    conn.Open();
+                    return BadRequest("User does not exist");
+                }
 
-                    // Check if application already exists
-                    string checkQuery = "SELECT COUNT(*) FROM Applications WHERE UserID = @userId AND JobID = @jobId";
-                    SqlCommand checkCmd = new SqlCommand(checkQuery, conn);
-                    checkCmd.Parameters.AddWithValue("@userId", userId);
-                    checkCmd.Parameters.AddWithValue("@jobId", jobId);
+                // ============================
+                // Check if Job exists
+                // ============================
+                string checkJob = "SELECT COUNT(*) FROM Jobs WHERE JobID = @jobId";
+                SqlCommand jobCmd = new SqlCommand(checkJob, conn);
+                jobCmd.Parameters.AddWithValue("@jobId", jobId);
 
-                    int exists = (int)checkCmd.ExecuteScalar();
+                if ((int)jobCmd.ExecuteScalar() == 0)
+                {
+                    return BadRequest("Job does not exist");
+                }
 
-                    if (exists > 0)
-                    {
-                        return BadRequest("You have already applied for this job.");
-                    }
+                // ============================
+                // Insert Application
+                // ============================
+                string query = "INSERT INTO Applications (UserID, JobID, Status) VALUES (@userId, @jobId, 'Pending')";
 
-                    // Insert application
-                    string query = "INSERT INTO Applications (UserID, JobID, Status) VALUES (@userId, @jobId, 'Pending')";
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@jobId", jobId);
 
-                    SqlCommand cmd = new SqlCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@userId", userId);
-                    cmd.Parameters.AddWithValue("@jobId", jobId);
+                int rows = cmd.ExecuteNonQuery();
 
-                    int rows = cmd.ExecuteNonQuery();
-
-                    if (rows > 0)
-                    {
-                        return Ok("Application submitted successfully.");
-                    }
-                    else
-                    {
-                        return BadRequest("Application failed.");
-                    }
+                if (rows > 0)
+                {
+                    return Ok("Application submitted successfully");
+                }
+                else
+                {
+                    return BadRequest("Application failed");
                 }
             }
-            catch (Exception)
-            {
-                return StatusCode(500, "Error occurred while applying for job.");
-            }
-        }
+        }   
     }
 }
